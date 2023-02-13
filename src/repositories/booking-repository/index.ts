@@ -11,13 +11,22 @@ async function findbooking(userId: number) {
         }
     });
   }
-  
+
+ 
   async function createBooking(userId: number, roomId: number) {
     return prisma.booking.create({
         data:{
-            userId,
-            roomId
+          userId,
+          roomId
+        }, select:{
+          roomId: true
         }
+    })
+  }
+
+  async function findEnrollment(userId: number) {
+    return prisma.enrollment.findFirst({
+      where: {userId}
     })
   }
 
@@ -28,47 +37,55 @@ async function findbooking(userId: number) {
         },
         data: {
             roomId
+        },
+        select:{
+          roomId:true
         }
     })
   };
 
-  async function getBookingRepoById(bookingId: number) {
-    return prisma.booking.findFirst({
-      where: {
-        id: bookingId
-      },
-      select: {
-        id: true
-      }
-    });
-  }
+ 
 
 
   async function getCheckCapacity(roomId: number) {
-    return prisma.room.findFirst({
-        where:{
-            id: roomId
-        },
-        select: {
-            capacity: true,
-            _count:{
-                select: {
-                    Booking: true
-                }
-            }
-        }
+    return prisma.booking.findMany({
+      where: {
+        roomId
+      }
     })
   }
   
+  async function findTicketType(id: number) {
+    return prisma.ticketType.findFirst({
+      where: {
+        id
+      }
+    })
+  }
 
+  async function findTicket(enrollmentId: number) {
+    return prisma.ticket.findFirst({
+      where: {
+        enrollmentId
+      }
+    })
+  }
 
+  async function findRoom(id: number) {
+    return prisma.room.findUnique({
+      where: {id}
+    })
+  }
   
   const bookingRepository = {
     findbooking,
     createBooking,
     updateBooking,
     getCheckCapacity,
-    getBookingRepoById
+    findTicketType,
+    findEnrollment,
+    findTicket,
+    findRoom
   };
   
   export default bookingRepository;

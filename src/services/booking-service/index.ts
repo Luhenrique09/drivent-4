@@ -1,56 +1,69 @@
-import { requestError } from "@/errors";
+import { notFoundError, requestError } from "@/errors";
 import bookingRepository from "@/repositories/booking-repository";
-import httpStatus from "http-status";
+import enrollmentRepository from "@/repositories/enrollment-repository";
+import ticketRepository from "@/repositories/ticket-repository";
+import httpStatus, { FORBIDDEN } from "http-status";
 
-async function getBooking(userId: number){
+
+async function getBooking(userId: number) {
     const result = await bookingRepository.findbooking(userId);
-    if(!result){
-        throw requestError(httpStatus.NOT_FOUND, "Booking not found");
+    if (!result) {
+        throw { name: "NotFoundError", message: "No booking" }
     }
     return result;
 };
 
-async function createBooking(userId: number, roomId: number){
-   
-    if(!roomId){
-        throw requestError(httpStatus.NOT_FOUND, "Room not found");
+async function createBooking(userId: number, roomId: number) {
+    const userBooking = await bookingRepository.findbooking(userId);
+    if (userBooking) {
+        throw { name: "FORBIDDEN" }
     }
 
-    const roomCapacityAndBookings = await bookingRepository.getCheckCapacity(roomId);
-    if (roomCapacityAndBookings._count.Booking === roomCapacityAndBookings.capacity) {
-      throw requestError(httpStatus.FORBIDDEN, "Room without vacancies");
+    const enrollment = await bookingRepository.findEnrollment(userId)
+    if (!enrollment) {
+        throw { name: "FORBIDDEN" }
     }
 
-    const booking = await bookingRepository.findbooking(userId);
-    if(!booking){
-        throw requestError(httpStatus.FORBIDDEN, "User already has a booking");
+    const ticket = await bookingRepository.findTicket(enrollment.id)
+    if (!ticket || ticket.status === "RESERVED") {
+        throw { name: "FORBIDDEN"}
     }
+
+    const ticketType = await bookingRepository.findTicketType(ticket.ticketTypeId)
+    if (ticketType.isRemote === true || ticketType.includesHotel === false) {
+        throw { name: "FORBIDDEN"}
+    }
+
+    const room = await bookingRepository.findRoom(roomId);
+    if (!room) {
+        throw { name: "NotFoundError"}
+    }
+
+    const booking = await bookingRepository.getCheckCapacity(room.id);
+    if (room.capacity === booking.length) {
+        throw { name: "FORBIDDEN"}
+    }
+
 
     const createdBooking = await bookingRepository.createBooking(userId, roomId);
 
-    return {id: createdBooking.id};
-};  
+    return createdBooking;
+};
 
-async function updateBooking(userId: number, roomId: number, bookingId: number){
-    const booking = await bookingRepository.findbooking(userId);
-    if(booking.id !== bookingId ){
-        throw requestError(httpStatus.FORBIDDEN, "It is not possible to change the reservation")
-    }
-    const roomCapacityAndBookings = await bookingRepository.getCheckCapacity(roomId);
-    if (roomCapacityAndBookings._count.Booking === roomCapacityAndBookings.capacity) {
-      throw requestError(httpStatus.FORBIDDEN, "Room without vacancies");
+async function updateBooking(userId: number, roomId: number, bookingId: number) {
+  
+     const room = await bookingRepository.findRoom(roomId);
+    if (!room) {
+        throw { name: "NotFoundError" }
     }
 
-    if(!roomId){
-        throw requestError(httpStatus.NOT_FOUND, "Room not found");
-    }
-    const result = await bookingRepository.getBookingRepoById(bookingId);
-    if (!result) {
-      throw requestError(httpStatus.NOT_FOUND, "Booking not found");
-    }
+    const booking = await bookingRepository.getCheckCapacity(room.id);
+    if (room.capacity === booking.length) {
+        throw { name: "FORBIDDEN"}
+    } 
 
     const bookingUp = await bookingRepository.updateBooking(bookingId, roomId);
-    return {bookingId: bookingUp.id};
+    return bookingUp;
 
 };
 
