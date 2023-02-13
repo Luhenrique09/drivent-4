@@ -36,9 +36,9 @@ export async function createBooking(req: AuthenticatedRequest, res: Response): P
     if (error.name === "NotFoundError") {
       return res.sendStatus(httpStatus.NOT_FOUND)
     }
-    if (error.name === "FORBIDDEN") {
+   
       return res.sendStatus(httpStatus.FORBIDDEN)
-    }
+    
   }
 }
 
@@ -56,8 +56,7 @@ export async function updateBooking(req: AuthenticatedRequest, res: Response): P
     if (error.name === "NotFoundError") {
       return res.sendStatus(httpStatus.NOT_FOUND)
     }
-    if (error.name === "FORBIDDEN") {
+
       return res.sendStatus(httpStatus.FORBIDDEN)
-    }
   }
 }

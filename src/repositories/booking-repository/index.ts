@@ -72,7 +72,7 @@ async function findbooking(userId: number) {
   }
 
   async function findRoom(id: number) {
-    return prisma.room.findUnique({
+    return prisma.room.findFirst({
       where: {id}
     })
   }

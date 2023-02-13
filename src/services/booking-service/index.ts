@@ -1,14 +1,10 @@
-import { notFoundError, requestError } from "@/errors";
 import bookingRepository from "@/repositories/booking-repository";
-import enrollmentRepository from "@/repositories/enrollment-repository";
-import ticketRepository from "@/repositories/ticket-repository";
-import httpStatus, { FORBIDDEN } from "http-status";
 
 
 async function getBooking(userId: number) {
     const result = await bookingRepository.findbooking(userId);
     if (!result) {
-        throw { name: "NotFoundError", message: "No booking" }
+        throw { name: "NotFoundError" }
     }
     return result;
 };
@@ -52,15 +48,10 @@ async function createBooking(userId: number, roomId: number) {
 
 async function updateBooking(userId: number, roomId: number, bookingId: number) {
   
-     const room = await bookingRepository.findRoom(roomId);
+    const room = await bookingRepository.findRoom(roomId);
     if (!room) {
-        throw { name: "NotFoundError" }
+        throw { name: "NotFoundError"}
     }
-
-    const booking = await bookingRepository.getCheckCapacity(room.id);
-    if (room.capacity === booking.length) {
-        throw { name: "FORBIDDEN"}
-    } 
 
     const bookingUp = await bookingRepository.updateBooking(bookingId, roomId);
     return bookingUp;
